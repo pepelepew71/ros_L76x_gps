@@ -1,7 +1,7 @@
 <launch>
 
   <node pkg="ros_l76x_gps" type="gps.py" name="L76X_gps" output="screen">
-    <param name='port' value='asd' />
+    <param name='port' value='/dev/ttyUSB0' />
   </node>
 
 </launch>
