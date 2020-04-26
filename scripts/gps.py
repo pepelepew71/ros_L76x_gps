@@ -12,7 +12,7 @@ from sensor_msgs.msg import NavSatFix
 
 def main():
 
-    rospy.init_node(name='L76X_gps', anonymous=False)
+    rospy.init_node(name='gps_node', anonymous=False)
 
     topic = rospy.get_param(param_name='~topic', default='/fix')
     pub = rospy.Publisher(topic, NavSatFix, queue_size=5)

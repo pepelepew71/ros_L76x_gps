@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>ros_l76x_gps</name>
+  <name>ros_gps</name>
   <version>0.0.0</version>
-  <description>The ros_l76x_gps package</description>
+  <description>The ros_gps package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
