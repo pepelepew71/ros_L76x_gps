@@ -9,17 +9,15 @@ import serial
 import rospy
 from sensor_msgs.msg import NavSatFix
 
-
 def main():
-
     rospy.init_node(name='gps_node', anonymous=False)
 
-    topic = rospy.get_param(param_name='~topic', default='/fix')
-    pub = rospy.Publisher(topic, NavSatFix, queue_size=5)
-
+    topic = rospy.get_param(param_name='~topic', default='/gps_fix')
     port = rospy.get_param(param_name='~port', default='/dev/ttyUSB0')
-    baud = 9600
-    ser = serial.Serial(port, baud)
+    baud = rospy.get_param(param_name='~baud', default=9600)
+
+    pub = rospy.Publisher(topic, NavSatFix, queue_size=5)
+    ser = serial.Serial(port, int(baud))
 
     while True:
         while ser.in_waiting:
@@ -45,7 +43,6 @@ def parse_data_and_pub(data, pub):
             msg.header.frame_id = "/world"
             msg.latitude = lat
             msg.longitude = lon
-            # msg.altitude = 0.0
             msg.position_covariance = [3.706, 0, 0, 0, 3.706, 0, 0, 0, 3.706]  # 2.5 m CEP
             msg.position_covariance_type = 2
             pub.publish(msg)
