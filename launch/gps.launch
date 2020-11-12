@@ -2,7 +2,7 @@
 
   <node pkg="ros_gps" type="gps.py" name="gps_node" output="screen">
     <param name='topic' value='/gps_fix' />
-    <param name='port' value='/dev/ttyUSB0' />
+    <param name='port' value='/dev/ttyACM0' />
     <param name='baud' value='9600' />
   </node>
 

@@ -3,41 +3,33 @@
 from __future__ import print_function
 from __future__ import division
 
+import os
 import re
 import serial
 
+import numpy as np
+
 import rospy
 from sensor_msgs.msg import NavSatFix
+from std_srvs.srv import Empty, EmptyResponse
 
-def main():
-    rospy.init_node(name='gps_node', anonymous=False)
-
-    topic = rospy.get_param(param_name='~topic', default='/gps_fix')
-    port = rospy.get_param(param_name='~port', default='/dev/ttyUSB0')
-    baud = rospy.get_param(param_name='~baud', default=9600)
-
-    pub = rospy.Publisher(topic, NavSatFix, queue_size=5)
-    ser = serial.Serial(port, int(baud))
-
-    while True:
-        while ser.in_waiting:
-            try:
-                data_raw = ser.readline()
-                data = data_raw.decode()
-                parse_data_and_pub(data=data, pub=pub)
-            except Exception as err:
-                print(err)
-                rospy.loginfo(err)
+def cb_save(request):
+    path = os.getcwd() + "/gps_records.csv"
+    rospy.loginfo("/gps: save to " + path)
+    np.savetxt(path, np.array(RECORDS), delimiter=",")
+    return EmptyResponse()
 
 def parse_data_and_pub(data, pub):
+    global RECORDS
 
     if data[:6] == "$GNGLL":
         data_list = data.split(",")
         lat = data_list[1]
         lon = data_list[3]
         if lat and lon:
-            lat = float(lat[:-7]) + float(lat[-7:]) / 60.0  # google map DD format
-            lon = float(lon[:-7]) + float(lon[-7:]) / 60.0
+            lat = float(lat[:-8]) + float(lat[-8:]) / 60.0  # google map DD format
+            lon = float(lon[:-8]) + float(lon[-8:]) / 60.0
+            RECORDS.append((lat, lon))
             msg = NavSatFix()
             msg.header.stamp = rospy.Time.now()
             msg.header.frame_id = "/world"
@@ -54,4 +46,25 @@ def parse_data_and_pub(data, pub):
 
 if __name__ == "__main__":
 
-    main()
+    rospy.init_node(name='gps_node', anonymous=False)
+
+    topic = rospy.get_param(param_name='~topic', default='/gps_fix')
+    port = rospy.get_param(param_name='~port', default='/dev/ttyUSB0')
+    baud = rospy.get_param(param_name='~baud', default=9600)
+
+    rospy.Service(name='~save', service_class=Empty, handler=cb_save)
+
+    pub = rospy.Publisher(topic, NavSatFix, queue_size=5)
+    ser = serial.Serial(port, int(baud))
+
+    RECORDS = []
+
+    while True:
+        while ser.in_waiting:
+            try:
+                data_raw = ser.readline()
+                data = data_raw.decode()
+                parse_data_and_pub(data=data, pub=pub)
+            except Exception as err:
+                print(err)
+                rospy.loginfo(err)
