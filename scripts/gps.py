@@ -12,12 +12,24 @@ import numpy as np
 import rospy
 from sensor_msgs.msg import NavSatFix
 from std_srvs.srv import Empty, EmptyResponse
+from std_srvs.srv import SetBool, SetBoolResponse
 
 def cb_save(request):
     path = os.getcwd() + "/gps_records.csv"
     rospy.loginfo("/gps: save to " + path)
     np.savetxt(path, np.array(RECORDS), delimiter=",")
     return EmptyResponse()
+
+def cb_start(request):
+    global RECORDS, IS_RECORD
+
+    if request.data:
+        rospy.loginfo("/gps: start recording")
+        IS_RECORD = True
+    else:
+        rospy.loginfo("/gps: stop recording and delete all")
+        RECORDS = list()
+        IS_RECORD = False
 
 def parse_data_and_pub(data, pub):
     global RECORDS
@@ -29,7 +41,8 @@ def parse_data_and_pub(data, pub):
         if lat and lon:
             lat = float(lat[:-8]) + float(lat[-8:]) / 60.0  # google map DD format
             lon = float(lon[:-8]) + float(lon[-8:]) / 60.0
-            RECORDS.append((lat, lon))
+            if IS_RECORD:
+                RECORDS.append((lat, lon))
             msg = NavSatFix()
             msg.header.stamp = rospy.Time.now()
             msg.header.frame_id = "/world"
@@ -53,10 +66,12 @@ if __name__ == "__main__":
     baud = rospy.get_param(param_name='~baud', default=9600)
 
     rospy.Service(name='~save', service_class=Empty, handler=cb_save)
+    rospy.Service(name='~start', service_class=SetBool, handler=cb_start)
 
     pub = rospy.Publisher(topic, NavSatFix, queue_size=5)
     ser = serial.Serial(port, int(baud))
 
+    IS_RECORD = False
     RECORDS = []
 
     while True:
