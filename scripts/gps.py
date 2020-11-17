@@ -41,8 +41,6 @@ def parse_data_and_pub(data, pub):
         if lat and lon:
             lat = float(lat[:-8]) + float(lat[-8:]) / 60.0  # google map DD format
             lon = float(lon[:-8]) + float(lon[-8:]) / 60.0
-            if IS_RECORD:
-                RECORDS.append((lat, lon))
             msg = NavSatFix()
             msg.header.stamp = rospy.Time.now()
             msg.header.frame_id = "/world"
@@ -51,6 +49,8 @@ def parse_data_and_pub(data, pub):
             msg.position_covariance = [3.706, 0, 0, 0, 3.706, 0, 0, 0, 3.706]  # 2.5 m CEP
             msg.position_covariance_type = 2
             pub.publish(msg)
+            if ENABLE_SAVE and IS_RECORD:
+                RECORDS.append((lat, lon))
         else:
             print("gps no signal")
             rospy.loginfo("gps no signal")
@@ -64,15 +64,17 @@ if __name__ == "__main__":
     topic = rospy.get_param(param_name='~topic', default='/gps_fix')
     port = rospy.get_param(param_name='~port', default='/dev/ttyUSB0')
     baud = rospy.get_param(param_name='~baud', default=9600)
+    ENABLE_SAVE = rospy.get_param(param_name='~enable_save', default=False)
 
-    rospy.Service(name='~save', service_class=Empty, handler=cb_save)
-    rospy.Service(name='~start', service_class=SetBool, handler=cb_start)
-
-    pub = rospy.Publisher(topic, NavSatFix, queue_size=5)
-    ser = serial.Serial(port, int(baud))
+    if ENABLE_SAVE:
+        rospy.Service(name='~save', service_class=Empty, handler=cb_save)
+        rospy.Service(name='~start', service_class=SetBool, handler=cb_start)
 
     IS_RECORD = False
     RECORDS = []
+
+    pub = rospy.Publisher(topic, NavSatFix, queue_size=5)
+    ser = serial.Serial(port, int(baud))
 
     while True:
         while ser.in_waiting:
