@@ -43,7 +43,7 @@ def parse_data_and_pub(data, pub):
             lon = float(lon[:-8]) + float(lon[-8:]) / 60.0
             msg = NavSatFix()
             msg.header.stamp = rospy.Time.now()
-            msg.header.frame_id = "/world"
+            msg.header.frame_id = "gps"
             msg.latitude = lat
             msg.longitude = lon
             msg.position_covariance = [3.706, 0, 0, 0, 3.706, 0, 0, 0, 3.706]  # 2.5 m CEP
@@ -51,9 +51,6 @@ def parse_data_and_pub(data, pub):
             pub.publish(msg)
             if ENABLE_SAVE and IS_RECORD:
                 RECORDS.append((lat, lon))
-        else:
-            print("gps no signal")
-            rospy.loginfo("gps no signal")
     else:
         pass
 
